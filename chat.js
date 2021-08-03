@@ -53,13 +53,13 @@ io.on("connection", function (socket) {
             };
 
             for (usuario in usuarios) {
-                if (usuario != obj.username){
-                    io.sockets.emit("atualizar mensagens", obj_mensagem); 
-                }   
+                if (usuario != obj.username) {
+                    io.sockets.emit("atualizar mensagens", obj_mensagem);
+                }
             }
 
             io.sockets.emit("atualizar usuarios", Object.keys(usuarios));
-            storageUserMessages(usuario, mensagem, date, obj.sendTo,'online');
+            storageUserMessages(usuario, mensagem, date, obj.sendTo, 'online');
             callback(true);
         } else {
             callback(false);
@@ -93,10 +93,10 @@ io.on("connection", function (socket) {
     socket.on("get messages", function (dados, callback) {
         var allMessages = [];
         for (var i = 0; i < storageUserMessagesArray.length; i++) {
-            if (storageUserMessagesArray[i].sendTo == dados.selectedUser ) {
+            if (storageUserMessagesArray[i].sendTo == dados.selectedUser) {
                 allMessages.push(storageUserMessagesArray[i]);
             }
-        }    
+        }
         callback(allMessages);
     });
 

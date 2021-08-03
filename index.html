@@ -1,440 +1,465 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.js"></script>
-<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+        integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
+    </script>
+    <style type="text/css">
+        .card {
+            background: #fff;
+            transition: .5s;
+            border: 0;
+            margin-bottom: 30px;
+            border-radius: .55rem;
+            position: relative;
+            width: 100%;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 10%);
+        }
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-<style type="text/css">
-.card {
-    background: #fff;
-    transition: .5s;
-    border: 0;
-    margin-bottom: 30px;
-    border-radius: .55rem;
-    position: relative;
-    width: 100%;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 10%);
-}
-.chat-app .people-list {
-    width: 280px;
-    position: absolute;
-    left: 0;
-    top: 0;
-    padding: 20px;
-    z-index: 7
-}
+        .chat-app .people-list {
+            width: 280px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            padding: 20px;
+            z-index: 7
+        }
 
-.chat-app .chat {
-    margin-left: 280px;
-    border-left: 1px solid #eaeaea
-}
+        .chat-app .chat {
+            margin-left: 280px;
+            border-left: 1px solid #eaeaea
+        }
 
-.people-list {
-    -moz-transition: .5s;
-    -o-transition: .5s;
-    -webkit-transition: .5s;
-    transition: .5s
-}
+        .people-list {
+            -moz-transition: .5s;
+            -o-transition: .5s;
+            -webkit-transition: .5s;
+            transition: .5s
+        }
 
-.people-list .chat-list li {
-    padding: 10px 15px;
-    list-style: none;
-    border-radius: 3px
-}
+        .people-list .chat-list li {
+            padding: 10px 15px;
+            list-style: none;
+            border-radius: 3px
+        }
 
-.people-list .chat-list li:hover {
-    background: #efefef;
-    cursor: pointer
-}
+        .people-list .chat-list li:hover {
+            background: #efefef;
+            cursor: pointer
+        }
 
-.people-list .chat-list li .name {
-    font-size: 15px
-}
+        .people-list .chat-list li .name {
+            font-size: 15px
+        }
 
-.people-list .chat-list img {
-    width: 45px;
-    border-radius: 50%
-}
+        .people-list .chat-list img {
+            width: 45px;
+            border-radius: 50%
+        }
 
-.people-list img {
-    float: left;
-    border-radius: 50%
-}
+        .people-list img {
+            float: left;
+            border-radius: 50%
+        }
 
-.people-list .about {
-    float: left;
-    padding-left: 8px
-}
+        .people-list .about {
+            float: left;
+            padding-left: 8px
+        }
 
-.people-list .status {
-    color: #999;
-    font-size: 13px
-}
+        .people-list .status {
+            color: #999;
+            font-size: 13px
+        }
 
-.chat .chat-header {
-    padding: 15px 20px;
-    border-bottom: 2px solid #f4f7f6
-}
+        .chat .chat-header {
+            padding: 15px 20px;
+            border-bottom: 2px solid #f4f7f6
+        }
 
-.chat .chat-header img {
-    float: left;
-    border-radius: 40px;
-    width: 40px
-}
+        .chat .chat-header img {
+            float: left;
+            border-radius: 40px;
+            width: 40px
+        }
 
-.chat .chat-header .chat-about {
-    float: left;
-    padding-left: 10px
-}
+        .chat .chat-header .chat-about {
+            float: left;
+            padding-left: 10px
+        }
 
-.chat .chat-history {
-    padding: 20px;
-    border-bottom: 2px solid #fff;
-    height: 500px;
-    overflow: auto;
-}
+        .chat .chat-history {
+            padding: 20px;
+            border-bottom: 2px solid #fff;
+            height: 500px;
+            overflow: auto;
+        }
 
-.chat .chat-history ul {
-    padding: 0
-}
+        .chat .chat-history ul {
+            padding: 0
+        }
 
-.chat .chat-history ul li {
-    list-style: none;
-    margin-bottom: 30px
-}
+        .chat .chat-history ul li {
+            list-style: none;
+            margin-bottom: 30px
+        }
 
-.chat .chat-history ul li:last-child {
-    margin-bottom: 0px
-}
+        .chat .chat-history ul li:last-child {
+            margin-bottom: 0px
+        }
 
-.chat .chat-history .message-data-time {
-    color: #434651;
-    padding-left: 6px;
-    font-size:12px;
-}
+        .chat .chat-history .message-data-time {
+            color: #434651;
+            padding-left: 6px;
+            font-size: 12px;
+        }
 
-.chat .chat-history .message {
-    color: #444;
-    padding: 18px 20px;
-    line-height: 26px;
-    font-size: 14px;
-    border-radius: 7px;
-    display: inline-block;
-    position: relative;
-    margin-bottom: 15px;
-}
+        .chat .chat-history .message {
+            color: #444;
+            padding: 18px 20px;
+            line-height: 26px;
+            font-size: 14px;
+            border-radius: 7px;
+            display: inline-block;
+            position: relative;
+            margin-bottom: 15px;
+        }
 
-.chat .chat-history .message:after {
-    bottom: 100%;
-    left: 7%;
-    border: solid transparent;
-    content: " ";
-    height: 0;
-    width: 0;
-    position: absolute;
-    pointer-events: none;
-    border-bottom-color: #fff;
-    border-width: 10px;
-    margin-left: -10px
-}
+        .chat .chat-history .message:after {
+            bottom: 100%;
+            left: 7%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-bottom-color: #fff;
+            border-width: 10px;
+            margin-left: -10px
+        }
 
-.chat .chat-history .message-online{
-    background: #b3ffb3;
-}
-.chat .chat-history .message-offline{
-    background: #ffb3b3;
-}
-.chat .chat-history .my-message {
-    background: #efefef
-}
+        .chat .chat-history .message-online {
+            background: #b3ffb3;
+        }
 
-.chat .chat-history .my-message:after {
-    bottom: 100%;
-    left: 30px;
-    border: solid transparent;
-    content: " ";
-    height: 0;
-    width: 0;
-    position: absolute;
-    pointer-events: none;
-    border-bottom-color: #efefef;
-    border-width: 10px;
-    margin-left: -10px
-}
+        .chat .chat-history .message-offline {
+            background: #ffb3b3;
+        }
 
-.chat .chat-history .other-message {
-    background: #e8f1f3;
-    text-align: right
-}
+        .chat .chat-history .my-message {
+            background: #efefef
+        }
 
-.chat .chat-history .other-message:after {
-    border-bottom-color: #e8f1f3;
-    left: 93%
-}
+        .chat .chat-history .my-message:after {
+            bottom: 100%;
+            left: 30px;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-bottom-color: #efefef;
+            border-width: 10px;
+            margin-left: -10px
+        }
 
-.chat .chat-message {
-    padding: 20px
-}
+        .chat .chat-history .other-message {
+            background: #e8f1f3;
+            text-align: right
+        }
 
-.online,
-.offline,
-.me {
-    margin-right: 2px;
-    font-size: 8px;
-    vertical-align: middle
-}
+        .chat .chat-history .other-message:after {
+            border-bottom-color: #e8f1f3;
+            left: 93%
+        }
 
-.online {
-    color: #86c541
-}
+        .chat .chat-message {
+            padding: 20px
+        }
 
-.offline {
-    color: #e47297
-}
+        .online,
+        .offline,
+        .me {
+            margin-right: 2px;
+            font-size: 8px;
+            vertical-align: middle
+        }
 
-.me {
-    color: #1d8ecd
-}
+        .online {
+            color: #86c541
+        }
 
-.float-right {
-    float: right
-}
+        .offline {
+            color: #e47297
+        }
 
-.clearfix:after {
-    visibility: hidden;
-    display: block;
-    font-size: 0;
-    content: " ";
-    clear: both;
-    height: 0
-}
-.chat-app .chat-list {
-     height: 500px;
-    overflow: auto;
-    }
-.chat-app .chat-history {
-    height: 400px;
-    overflow-x: auto
-}
-.active{
-    background: #efefef;
-}
-.header{
-    height: 50px;
-    padding: 10px 20px 0 20px;
-}
-</style>
+        .me {
+            color: #1d8ecd
+        }
+
+        .float-right {
+            float: right
+        }
+
+        .clearfix:after {
+            visibility: hidden;
+            display: block;
+            font-size: 0;
+            content: " ";
+            clear: both;
+            height: 0
+        }
+
+        .chat-app .chat-list {
+            height: 500px;
+            overflow: auto;
+        }
+
+        .chat-app .chat-history {
+            height: 400px;
+            overflow-x: auto
+        }
+
+        .active {
+            background: #efefef;
+        }
+
+        .header {
+            height: 50px;
+            padding: 10px 20px 0 20px;
+        }
+    </style>
 </head>
+
 <body data-page="studio">
 
-<script>
-
-  var username = 'admin';//"<% $usuario %>";
-  if(username == 'admin'){
-    window.username = username + Math.floor(Math.random() * 9999999999).toString();
-  }else{
-    window.username = username;
-  }
+    <script>
+        var username = 'admin'; //"<% $usuario %>";
     </script>
 
-<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
 
-<div class="container">
-    <!-- Just an image -->
+    <div class="container">
+        <!-- Just an image -->
 
-<div class="row clearfix">
-    <div class="col-lg-12">
-        <div class="header bg-dark">
-    <div class="float-end text-light">
-        <span class="status text-light" id="username"></i> </span>
-     &nbsp;
-     <button type="button" class="btn-close btn-close-white" aria-label="Close"></button></div>
-</div>
-
-        <div class="card chat-app">
-            <div id="plist" class="people-list">
-                <div id="chat-list">
-  					<!-- append users list -->
+        <div class="row clearfix">
+            <div class="col-lg-12">
+                <div class="header bg-dark">
+                    <div class="float-end text-light">
+                        <span class="status text-light" id="username"></i> </span>
+                        &nbsp;
+                        <button type="button" class="btn-close btn-close-white" aria-label="Close"></button></div>
                 </div>
-            </div>
-            <div class="chat">
-                <div class="chat-header clearfix">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div id="chat_username" class="chat-about">
-                                <h6 class="m-b-0"></h6>
-                            </div>
+
+                <div class="card chat-app">
+                    <div id="plist" class="people-list">
+                        <div id="chat-list">
+                            <!-- append users list -->
                         </div>
                     </div>
-                </div>
-                <div class="chat-history">
-                </div>
-               <div class="chat-message clearfix">
-
-                    <form class="input-group mb-0" id="chat">
-                        <div class="input-group-prepend" style="background-color: #e9ecef;">
-                            <span class="input-group-text"><i class="fa fa-send"></i></span>
+                    <div class="chat">
+                        <div class="chat-header clearfix">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div id="chat_username" class="chat-about">
+                                        <h6 class="m-b-0"></h6>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <input type="text" id='texto_mensagem' name='texto_mensagem'  class="form-control" placeholder="Type a message">                                    
-                    </form>
+                        <div class="chat-history">
+                        </div>
+                        <div class="chat-message clearfix">
+
+                            <form class="input-group mb-0" id="chat">
+
+                                <!-- <div class="input-group-prepend" style="background-color: #e9ecef;">
+                            <span class="input-group-text"><i class="fa fa-send"></i></span>
+                        </div> -->
+
+                                <input type="text" id='texto_mensagem' name='texto_mensagem' class="form-control"
+                                    placeholder="Type a message">
+                                <button type="submit" class="btn btn-outline-secondary"><i
+                                        class="far fa-paper-plane"></i></button>
+                            </form>
+                            <div><span class="text-secondary" id="emojiBox" style="font-size: 20px;"><i
+                                        class=" far fa-smile"></i></span></div>
+                        </div>
+
+                    </div>
                 </div>
-                
             </div>
         </div>
     </div>
-</div>
-</div>
-  <script type="text/javascript">
-  	const socket = io("ws://localhost:3000");
-  	var selectedUser =  'grupo';
+    <script type="text/javascript">
+        console.log("admin");
+        const socket = io("ws://localhost:3000");
+        var selectedUser = 'grupo';
 
-   $(window).on("load", function(){
-   		$('#chat_username').html(selectedUser);
-        $('#username').html(window.username);	
-        chatLogin(window.username);
-    });
-    
-  	 function chatLogin(username){
-     	socket.emit("entrar", {username: window.username, sendTo: selectedUser },  function(valido){
-      });
-    }
-function drawMessages(dados){
-    console.log(dados,"dados");
-    
-    var ul = document.createElement('ul');
-    for(var i = 0; i < dados.length; i++){
-        var div = document.createElement('div');
-        var cssClass;
-        if(dados.length > 0){
-            if(dados[i].tipo == 'online'){
-                cssClass = 'message message-online';
-            }else if( dados[i].tipo == 'offline'){
-                cssClass = 'message message-offline';
-            }else if(dados[i].user == window.username){
-                cssClass = 'message my-message float-left';
-            }else{
-                cssClass = 'message other-message float-right';
-            }
-            div.innerHTML =`<li class="clearfix">
+        $(window).on("load", function () {
+            $('#chat_username').html(selectedUser);
+            $('#username').html(window.username);
+            chatLogin(window.username);
+        });
+
+        function chatLogin(username) {
+            socket.emit("entrar", {
+                username: window.username,
+                sendTo: selectedUser
+            }, function (valido) {});
+        }
+
+        function drawMessages(dados) {
+            console.log(dados, "dados");
+
+            var ul = document.createElement('ul');
+            for (var i = 0; i < dados.length; i++) {
+                var div = document.createElement('div');
+                var cssClass;
+                if (dados.length > 0) {
+                    if (dados[i].tipo == 'online') {
+                        cssClass = 'message message-online';
+                    } else if (dados[i].tipo == 'offline') {
+                        cssClass = 'message message-offline';
+                    } else if (dados[i].user == window.username) {
+                        cssClass = 'message my-message float-left';
+                    } else {
+                        cssClass = 'message other-message float-right';
+                    }
+                    div.innerHTML = `<li class="clearfix">
             <div class="${cssClass}">
                 <span class="message-data-time">${dados[i].date}</span>
                <div> ${dados[i].msg}</div>
                </div>
             </li>`;
-            ul.append(div);
+                    ul.append(div);
 
-            if(dados[i].sendTo == window.username){
-                var idDivHistory = "#"+dados[i].user;
-                console.log(idDivHistory);
-                $(idDivHistory).append(ul);
-                messageNotification(dados[i].user);
-            }else{
-                var idDivHistory = "#"+dados[i].sendTo;
-                console.log(idDivHistory);
-                $(idDivHistory).append(ul);
-                messageNotification(dados[i].sendTo)
+                    if (dados[i].sendTo == window.username) {
+                        var idDivHistory = "#" + dados[i].user;
+                        console.log(idDivHistory);
+                        $(idDivHistory).append(ul);
+                        messageNotification(dados[i].user);
+                    } else {
+                        var idDivHistory = "#" + dados[i].sendTo;
+                        console.log(idDivHistory);
+                        $(idDivHistory).append(ul);
+                        messageNotification(dados[i].sendTo)
+                    }
+
+                }
             }
-            
+
         }
-    }
-    
-}
-    function messageNotification(user){
-        var badge = $(`#badge-${user}`);
-        var counter = parseInt(badge.html());
-        badge.html(counter+1);
 
-    }
-    function selectUser(args,li){
-        console.log(args,"xxx");
-    
-        $('.chat-list li').attr('class', 'clearfix');
-        selectedUser = args;
-        li.className = 'clearfix active';
-        $('#chat_username').html(selectedUser);
+        function messageNotification(user) {
+            var badge = $(`#badge-${user}`);
+            var counter = parseInt(badge.html());
+            badge.html(counter + 1);
 
-        $(`#badge-${selectedUser}`).html('0');
+        }
 
-        var chatHistoryChildren = $('.chat-history').children();
-        for(var i = 0; i < chatHistoryChildren.length; i++){
-            if(chatHistoryChildren[i].style.display == 'block'){
-                chatHistoryChildren[i].style.display = 'none';
+        function selectUser(args, li) {
+            console.log(args, "xxx");
+
+            $('.chat-list li').attr('class', 'clearfix');
+            selectedUser = args;
+            li.className = 'clearfix active';
+            $('#chat_username').html(selectedUser);
+
+            $(`#badge-${selectedUser}`).html('0');
+
+            var chatHistoryChildren = $('.chat-history').children();
+            for (var i = 0; i < chatHistoryChildren.length; i++) {
+                if (chatHistoryChildren[i].style.display == 'block') {
+                    chatHistoryChildren[i].style.display = 'none';
+                }
             }
-        }
-        document.getElementById(args).style.display= 'block';
-    }
-
-function getDateTime() {
-    var dataAtual = new Date();
-    var dia = (dataAtual.getDate() < 10 ? '0' : '') + dataAtual.getDate();
-    var mes = ((dataAtual.getMonth() + 1) < 10 ? '0' : '') + (dataAtual.getMonth() + 1);
-    var ano = dataAtual.getFullYear();
-    var hora = (dataAtual.getHours() < 10 ? '0' : '') + dataAtual.getHours();
-    var minuto = (dataAtual.getMinutes() < 10 ? '0' : '') + dataAtual.getMinutes();
-    var segundo = (dataAtual.getSeconds() < 10 ? '0' : '') + dataAtual.getSeconds();
-
-    var dataFormatada = dia + "/" + mes + "/" + ano + " " + hora + ":" + minuto + ":" + segundo;
-    return dataFormatada;
-}
-   var date = getDateTime();
-
-    $("form#chat").submit(function(e){
-      e.preventDefault();
-
-      var msg = $(this).find("#texto_mensagem").val();
-      socket.emit("enviar mensagem", {msg: msg, username: window.username, sendTo: selectedUser }, function(){
-        $("form#chat #texto_mensagem").val("");
-      });
-    });
-
-    // Resposta ao envio de mensagens do servidor
-    socket.on("atualizar mensagens", function(dado){
-        console.log(dado);
-        if(dado != null){
-            var dado = [dado];
-            drawMessages(dado);
+            document.getElementById(args).style.display = 'block';
         }
 
-    });
+        function getDateTime() {
+            var dataAtual = new Date();
+            var dia = (dataAtual.getDate() < 10 ? '0' : '') + dataAtual.getDate();
+            var mes = ((dataAtual.getMonth() + 1) < 10 ? '0' : '') + (dataAtual.getMonth() + 1);
+            var ano = dataAtual.getFullYear();
+            var hora = (dataAtual.getHours() < 10 ? '0' : '') + dataAtual.getHours();
+            var minuto = (dataAtual.getMinutes() < 10 ? '0' : '') + dataAtual.getMinutes();
+            var segundo = (dataAtual.getSeconds() < 10 ? '0' : '') + dataAtual.getSeconds();
 
-    socket.on("atualizar usuarios", function(usuarios){
-        console.log(usuarios,"usuari");
-    	$("#chat-list").empty();
-        $('.chat-history').empty();
-         var divGroup = document.createElement('div');
-        divGroup.id='grupo';
-       $(divGroup).hide();
-    $('.chat-history').append(divGroup);
-		var ul =  document.createElement('ul');
-		ul.className = 'list-unstyled chat-list mt-2 mb-0';
-				$(ul).append(`<li class="clearfix active" onclick="selectUser('grupo',this)">
+            var dataFormatada = dia + "/" + mes + "/" + ano + " " + hora + ":" + minuto + ":" + segundo;
+            return dataFormatada;
+        }
+        var date = getDateTime();
+
+        $("form#chat").submit(function (e) {
+            e.preventDefault();
+
+            var msg = $(this).find("#texto_mensagem").val();
+            socket.emit("enviar mensagem", {
+                msg: msg,
+                username: window.username,
+                sendTo: selectedUser
+            }, function () {
+                $("form#chat #texto_mensagem").val("");
+            });
+        });
+
+        // Resposta ao envio de mensagens do servidor
+        socket.on("atualizar mensagens", function (dado) {
+            console.log(dado);
+            if (dado != null) {
+                var dado = [dado];
+                drawMessages(dado);
+            }
+
+        });
+
+        socket.on("atualizar usuarios", function (usuarios) {
+            console.log(usuarios, "usuari");
+            $("#chat-list").empty();
+            $('.chat-history').empty();
+            var divGroup = document.createElement('div');
+            divGroup.id = 'grupo';
+            $(divGroup).hide();
+            $('.chat-history').append(divGroup);
+            var ul = document.createElement('ul');
+            ul.className = 'list-unstyled chat-list mt-2 mb-0';
+            $(ul).append(`<li class="clearfix active" onclick="selectUser('grupo',this)">
 				<img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="avatar">
 		        <div class="about">
 		            <div class="name">Grupo</div>
 		            <div> <span id="badge-grupo" class="badge bg-secondary">0</span></div>
 		        </div>
 				</li>`);
-		var status;
-    	for(var i = 0; i < usuarios.length; i ++){
-            if(usuarios[i] != window.username){
-                var div = document.createElement('div');
-                div.id=usuarios[i];
-                $(div).hide();
-                $('.chat-history').append(div);
-            }
-            
-    		// prevent undefined
-    		if(usuarios[i] != undefined){
-    			if(usuarios[i] != window.username){
-					$(ul).append(`<li class="clearfix" onclick="selectUser('${usuarios[i]}',this)">
+            var status;
+            for (var i = 0; i < usuarios.length; i++) {
+                if (usuarios[i] != window.username) {
+                    var div = document.createElement('div');
+                    div.id = usuarios[i];
+                    $(div).hide();
+                    $('.chat-history').append(div);
+                }
+
+                // prevent undefined
+                if (usuarios[i] != undefined) {
+                    if (usuarios[i] != window.username) {
+                        $(ul).append(`<li class="clearfix" onclick="selectUser('${usuarios[i]}',this)">
 					<img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="avatar">
 			        <div class="about">
 			            <div class="name">${usuarios[i]}</div>
@@ -442,15 +467,40 @@ function getDateTime() {
 			           <div class="status"> <i class="fa fa-circle online"></i> </div>
 			        </div>
 					</li>`);
-    			}
-		    	}
-    		}
+                    }
+                }
+            }
 
-    	$("#chat-list").html(ul)
+            $("#chat-list").html(ul)
 
-    });
-  </script>
+        });
+    </script>
+    <script src="./emoji/fgEmojiPicker.js"></script>
+    <script>
+        var cursorPosition;
+        document.getElementById('texto_mensagem').addEventListener('click', e => {
+            console.log('Caret at: ', e.target.selectionStart)
+            cursorPosition = e.target.selectionStart;
+        })
 
-</div>
+        function insertEmojiAtPosition(emojiToInsert) {
+            var message = $('#texto_mensagem').val();
+            var output = [message.slice(0, cursorPosition), emojiToInsert, message.slice(cursorPosition)].join('');
+            $('#texto_mensagem').val(output);
+        }
+        const emojiPicker = new FgEmojiPicker({
+            trigger: ['#emojiBox'],
+            removeOnSelection: false,
+            closeButton: true,
+            position: ['top', 'right'],
+            preFetch: true,
+            insertInto: $('#texto_mensagem'),
+            emit(obj, triggerElement) {
+                insertEmojiAtPosition(obj.emoji);
+            }
+        });
+    </script>
+    </div>
 </body>
+
 </html>
