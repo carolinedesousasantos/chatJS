@@ -309,6 +309,7 @@
     </div>
     <script type="text/javascript">
         console.log("admin");
+        var usuarios = [];
         const socket = io("ws://localhost:3000");
         var selectedUser = 'grupo';
 
@@ -321,49 +322,54 @@
         function chatLogin(username) {
             socket.emit("entrar", {
                 username: window.username,
-                sendTo: selectedUser
+                to: selectedUser
             }, function (valido) {});
         }
+        socket.on("historic", function (historic) {
+            console.log(historic,"draw historic");
+            drawMessages(historic, window.username)
+        });
 
-        function drawMessages(dados) {
-            console.log(dados, "dados");
+        function drawMessages(historicList, currentUser) {
+          
+            for (let historic of historicList) {
+                if(historic.to == 'grupo'){
+                    var ulGroup = $(`#historicList-grupo`);
+                    drawMessage(historic, currentUser, ulGroup)
+                }
+                else {
+                    var ulFrom = $(`#historicList-${historic.username}`);
+                    drawMessage(historic, currentUser, ulFrom)
 
-            var ul = document.createElement('ul');
-            for (var i = 0; i < dados.length; i++) {
-                var div = document.createElement('div');
-                var cssClass;
-                if (dados.length > 0) {
-                    if (dados[i].tipo == 'online') {
-                        cssClass = 'message message-online';
-                    } else if (dados[i].tipo == 'offline') {
-                        cssClass = 'message message-offline';
-                    } else if (dados[i].user == window.username) {
-                        cssClass = 'message my-message float-left';
-                    } else {
-                        cssClass = 'message other-message float-right';
-                    }
-                    div.innerHTML = `<li class="clearfix">
-            <div class="${cssClass}">
-                <span class="message-data-time">${dados[i].date}</span>
-               <div> ${dados[i].msg}</div>
-               </div>
-            </li>`;
-                    ul.append(div);
-
-                    if (dados[i].sendTo == window.username) {
-                        var idDivHistory = "#" + dados[i].user;
-                        console.log(idDivHistory);
-                        $(idDivHistory).append(ul);
-                        messageNotification(dados[i].user);
-                    } else {
-                        var idDivHistory = "#" + dados[i].sendTo;
-                        console.log(idDivHistory);
-                        $(idDivHistory).append(ul);
-                        messageNotification(dados[i].sendTo)
-                    }
-
+                    var ulTo = $(`#historicList-${historic.to}`);
+                    drawMessage(historic, currentUser, ulTo)
                 }
             }
+        
+        }
+
+        function drawMessage(historic, currentUser, ul){
+            var cssClass = 'message other-message float-right';
+
+            if((historic.to == 'grupo' && historic.username == currentUser )
+            || historic.username == currentUser
+            ){
+            cssClass = 'message my-message float-left';
+            }
+
+//            var ul = $(`#historicList-${historic.to}`);
+            var li = document.createElement('li');
+
+            li.className = "clearfix";
+            li.innerHTML = `
+            <div class="${cssClass}">
+                <span class="message-data-time">${historic.date}</span>
+                <div> ${historic.msg}</div>
+                <div style="background-color:red;"> ${historic.to}</div>
+            </div>`;
+
+            $(ul).append(li);
+            messageNotification(historic.to)
 
         }
 
@@ -371,12 +377,9 @@
             var badge = $(`#badge-${user}`);
             var counter = parseInt(badge.html());
             badge.html(counter + 1);
-
         }
 
         function selectUser(args, li) {
-            console.log(args, "xxx");
-
             $('.chat-list li').attr('class', 'clearfix');
             selectedUser = args;
             li.className = 'clearfix active';
@@ -393,20 +396,6 @@
             document.getElementById(args).style.display = 'block';
         }
 
-        function getDateTime() {
-            var dataAtual = new Date();
-            var dia = (dataAtual.getDate() < 10 ? '0' : '') + dataAtual.getDate();
-            var mes = ((dataAtual.getMonth() + 1) < 10 ? '0' : '') + (dataAtual.getMonth() + 1);
-            var ano = dataAtual.getFullYear();
-            var hora = (dataAtual.getHours() < 10 ? '0' : '') + dataAtual.getHours();
-            var minuto = (dataAtual.getMinutes() < 10 ? '0' : '') + dataAtual.getMinutes();
-            var segundo = (dataAtual.getSeconds() < 10 ? '0' : '') + dataAtual.getSeconds();
-
-            var dataFormatada = dia + "/" + mes + "/" + ano + " " + hora + ":" + minuto + ":" + segundo;
-            return dataFormatada;
-        }
-        var date = getDateTime();
-
         $("form#chat").submit(function (e) {
             e.preventDefault();
 
@@ -414,65 +403,71 @@
             socket.emit("enviar mensagem", {
                 msg: msg,
                 username: window.username,
-                sendTo: selectedUser
+                to: selectedUser
             }, function () {
                 $("form#chat #texto_mensagem").val("");
             });
         });
 
         // Resposta ao envio de mensagens do servidor
-        socket.on("atualizar mensagens", function (dado) {
-            console.log(dado);
-            if (dado != null) {
-                var dado = [dado];
-                drawMessages(dado);
-            }
-
+        socket.on("atualizar mensagens", function (msg) {
+            console.log(msg);
+            drawMessages([msg], window.username);
         });
 
-        socket.on("atualizar usuarios", function (usuarios) {
-            console.log(usuarios, "usuari");
+        function drawUserList(usuarios) {
             $("#chat-list").empty();
-            $('.chat-history').empty();
+        
             var divGroup = document.createElement('div');
             divGroup.id = 'grupo';
             $(divGroup).hide();
+            var ul = document.createElement('ul');
+            ul.id = `historicList-grupo`;
+            divGroup.append(ul);
             $('.chat-history').append(divGroup);
             var ul = document.createElement('ul');
             ul.className = 'list-unstyled chat-list mt-2 mb-0';
             $(ul).append(`<li class="clearfix active" onclick="selectUser('grupo',this)">
-				<img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="avatar">
-		        <div class="about">
-		            <div class="name">Grupo</div>
-		            <div> <span id="badge-grupo" class="badge bg-secondary">0</span></div>
-		        </div>
-				</li>`);
-            var status;
+                 <img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="avatar">
+                 <div class="about">
+                     <div class="name">Grupo</div>
+                     <div> <span id="badge-grupo" class="badge bg-secondary">0</span></div>
+                 </div>
+             </li>`);
+            var status = "online";
             for (var i = 0; i < usuarios.length; i++) {
-                if (usuarios[i] != window.username) {
-                    var div = document.createElement('div');
-                    div.id = usuarios[i];
-                    $(div).hide();
-                    $('.chat-history').append(div);
+                if (usuarios[i].status == 'offline') {
+                    status = 'offline';
                 }
-
-                // prevent undefined
-                if (usuarios[i] != undefined) {
-                    if (usuarios[i] != window.username) {
-                        $(ul).append(`<li class="clearfix" onclick="selectUser('${usuarios[i]}',this)">
-					<img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="avatar">
-			        <div class="about">
-			            <div class="name">${usuarios[i]}</div>
-                        <div> <span id="badge-${usuarios[i]}" class="badge bg-secondary">0</span></div>
-			           <div class="status"> <i class="fa fa-circle online"></i> </div>
-			        </div>
-					</li>`);
-                    }
+                if (usuarios[i].username != window.username) {
+                    drawDivHistoric(usuarios[i].username);
+                    $(ul).append(`<li class="clearfix"
+                 onclick="selectUser('${usuarios[i].username}',this)">
+                 <img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="avatar">
+                 <div class="about">
+                     <div class="name">${usuarios[i].username}</div>
+                     <div> <span id="badge-${usuarios[i].username}" class="badge bg-secondary">0</span></div>
+                     <div class="status"> <i class="fa fa-circle ${status}"></i> </div>
+                 </div>
+                 </li>`);
                 }
             }
-
             $("#chat-list").html(ul)
+        }
 
+        function drawDivHistoric(username) {
+            var div = document.createElement('div');
+            div.id = username;
+            var ul = document.createElement('ul');
+            ul.id = `historicList-${username}`;
+            div.append(ul);
+            $(div).hide();
+            $('.chat-history').append(div);
+
+        }
+        socket.on("atualizar usuarios", function (usuarios) {
+            drawUserList(usuarios);
+            usuarios = usuarios;
         });
     </script>
     <script src="./emoji/fgEmojiPicker.js"></script>

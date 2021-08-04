@@ -6,9 +6,21 @@ const io = require("socket.io")(app, {
         methods: ["GET", "POST"]
     }
 });
-
+const mysql = require('mysql');
+const persistence = require('./persistence.js');
+const utils = require('./util.js');
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '12345678',
+    database: 'chat'
+});
+//global 
 var usuarios = [];
-var storageUserMessagesArray = [];
+var historicMessages = [];
+persistence.loadUsers(connection, usuarios);
+persistence.loadMessages(connection, historicMessages);
+
 
 app.listen(3000);
 
@@ -36,68 +48,91 @@ function resposta(req, res) {
 }
 
 io.on("connection", function (socket) {
+    var date = utils.getDateTime();
     socket.on("entrar", function (obj, callback) {
+
+        var updateUser = false;
+        for (const u of usuarios) {
+            if (u.username == obj.username) {
+                updateUser = true;
+            }
+        }
+        var info = {
+            username: obj.username,
+            date: date,
+            status: 'online'
+        }
+        if (updateUser) {
+            persistence.updateUsers(connection, info);
+            for (const u of usuarios) {
+                if (u.username == obj.username) {
+                    u.date = info.date;
+                    u.status = info.status;
+                }
+            }
+        } else {
+            persistence.insertUsers(connection, info);
+            usuarios.push(info);
+        }
+
         if (!(obj.username in usuarios)) {
             socket.username = obj.username;
             usuarios[obj.username] = socket;
-
-            var mensagem = "<b>" + obj.username + "</b> acabou de entrar na sala";
-            var date = getDateTime();
-            var obj_mensagem = {
-                msg: mensagem,
-                tipo: 'online',
-                user: obj.username,
-                date: date,
-                usuarios: usuarios,
-                sendTo: obj.sendTo
-            };
-
-            for (usuario in usuarios) {
-                if (usuario != obj.username) {
-                    io.sockets.emit("atualizar mensagens", obj_mensagem);
-                }
-            }
-
-            io.sockets.emit("atualizar usuarios", Object.keys(usuarios));
-            storageUserMessages(usuario, mensagem, date, obj.sendTo, 'online');
-            callback(true);
-        } else {
-            callback(false);
         }
+
+        var msg = "<b>" + obj.username + "</b> acabou de entrar na sala";
+        var obj_msg = {
+            msg: msg,
+            tipo: 'online',
+            user: obj.username,
+            date: date,
+            to: obj.to
+        };
+        io.sockets.emit("atualizar usuarios", usuarios);
+
+        for (let usuario in usuarios) {
+            if (usuario != obj.username) {
+                //io.sockets.emit("atualizar mensagens", obj_msg);
+            } else {
+                console.log(obj, "chamou");
+
+                var authorizedMessages = utils.loadMessagesAuthorized(historicMessages, obj.username);
+                socket.emit("historic", authorizedMessages);
+            }
+        }
+
+        callback(true);
+
     });
 
     socket.on("enviar mensagem", function (dados, callback) {
-        var mensagem_enviada = dados.msg;
-        var usuario = dados.username;
-        var sendTo = dados.sendTo;
-        mensagem_enviada = usuario + " diz: " + mensagem_enviada;
-        var date = getDateTime();
+        var mensagem_enviada = dados.username + " diz: " + dados.msg;
         var obj_mensagem = {
-            msg: mensagem_enviada, tipo: 'login',
-            user: usuario, date: date, usuarios: usuarios, sendTo: sendTo
+            msg: mensagem_enviada,
+            username: dados.username,
+            date: date,
+            to: dados.to
         };
+        persistence.insertMessages(connection, obj_mensagem, date, historicMessages);
+        //historicMessages.push(obj_mensagem);
 
-        if (dados.sendTo == 'grupo') {
-            for (user in usuarios) {
-                usuarios[user].emit("atualizar mensagens", obj_mensagem);
+        if (dados.to == 'grupo') {
+            for (let user in usuarios) {
+                //if user is online
+                if (user[dados.username]) {
+                    user[dados.username].emit("atualizar mensagens", obj_mensagem);
+                }
             }
         } else {
-            usuarios[usuario].emit("atualizar mensagens", obj_mensagem);
-            usuarios[sendTo].emit("atualizar mensagens", obj_mensagem);
-        }
-        storageUserMessages(usuario, mensagem_enviada, date, sendTo, '');
+            usuarios[dados.username].emit("atualizar mensagens", obj_mensagem);
 
-        callback();
-    });
-
-    socket.on("get messages", function (dados, callback) {
-        var allMessages = [];
-        for (var i = 0; i < storageUserMessagesArray.length; i++) {
-            if (storageUserMessagesArray[i].sendTo == dados.selectedUser) {
-                allMessages.push(storageUserMessagesArray[i]);
+            if (usuarios[dados.to]) {
+                usuarios[dados.to].emit("atualizar mensagens", obj_mensagem);
             }
         }
-        callback(allMessages);
+
+
+        callback();
     });
 
     // socket.on("disconnect", function (dados) {
@@ -116,25 +151,3 @@ io.on("connection", function (socket) {
 
 });
 
-function getDateTime() {
-    var dataAtual = new Date();
-    var dia = (dataAtual.getDate() < 10 ? '0' : '') + dataAtual.getDate();
-    var mes = ((dataAtual.getMonth() + 1) < 10 ? '0' : '') + (dataAtual.getMonth() + 1);
-    var ano = dataAtual.getFullYear();
-    var hora = (dataAtual.getHours() < 10 ? '0' : '') + dataAtual.getHours();
-    var minuto = (dataAtual.getMinutes() < 10 ? '0' : '') + dataAtual.getMinutes();
-    var segundo = (dataAtual.getSeconds() < 10 ? '0' : '') + dataAtual.getSeconds();
-
-    var dataFormatada = dia + "/" + mes + "/" + ano + " " + hora + ":" + minuto + ":" + segundo;
-    return dataFormatada;
-}
-
-function storageUserMessages(usuario, mensagem_enviada, date, sendTo, tipo) {
-    storageUserMessagesArray.push({
-        user: usuario,
-        msg: mensagem_enviada,
-        date: date,
-        sendTo: sendTo,
-        tipo: tipo
-    });
-}
