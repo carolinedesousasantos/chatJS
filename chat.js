@@ -13,7 +13,8 @@ const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '12345678',
-    database: 'chat'
+    database: 'chat',
+    charset: 'utf8mb4'
 });
 //global 
 var usuarios = [];
@@ -52,8 +53,8 @@ io.on("connection", function (socket) {
     socket.on("entrar", function (obj, callback) {
 
         var updateUser = false;
-        for (const u of usuarios) {
-            if (u.username == obj.username) {
+        for (const user of usuarios) {
+            if (user.username == obj.username) {
                 updateUser = true;
             }
         }
@@ -64,10 +65,10 @@ io.on("connection", function (socket) {
         }
         if (updateUser) {
             persistence.updateUsers(connection, info);
-            for (const u of usuarios) {
-                if (u.username == obj.username) {
-                    u.date = info.date;
-                    u.status = info.status;
+            for (const user of usuarios) {
+                if (user.username == obj.username) {
+                    user.date = info.date;
+                    user.status = info.status;
                 }
             }
         } else {
@@ -80,33 +81,20 @@ io.on("connection", function (socket) {
             usuarios[obj.username] = socket;
         }
 
-        var msg = "<b>" + obj.username + "</b> acabou de entrar na sala";
-        var obj_msg = {
-            msg: msg,
-            tipo: 'online',
-            user: obj.username,
-            date: date,
-            to: obj.to
-        };
-        io.sockets.emit("atualizar usuarios", usuarios);
+        io.sockets.emit("actualizar usuarios", usuarios);
 
         for (let usuario in usuarios) {
-            if (usuario != obj.username) {
-                //io.sockets.emit("atualizar mensagens", obj_msg);
-            } else {
-                console.log(obj, "chamou");
-
+            if (usuario == obj.username) {
                 var authorizedMessages = utils.loadMessagesAuthorized(historicMessages, obj.username);
                 socket.emit("historic", authorizedMessages);
-            }
         }
-
+    }
         callback(true);
 
     });
 
-    socket.on("enviar mensagem", function (dados, callback) {
-        var mensagem_enviada = dados.username + " diz: " + dados.msg;
+    socket.on("enviar mensage", function (dados, callback) {
+        var mensagem_enviada = dados.username + ": " + dados.msg;
         var obj_mensagem = {
             msg: mensagem_enviada,
             username: dados.username,
@@ -114,40 +102,43 @@ io.on("connection", function (socket) {
             to: dados.to
         };
         persistence.insertMessages(connection, obj_mensagem, date, historicMessages);
-        //historicMessages.push(obj_mensagem);
+        historicMessages.push(obj_mensagem);
 
         if (dados.to == 'grupo') {
-            for (let user in usuarios) {
-                //if user is online
-                if (user[dados.username]) {
-                    user[dados.username].emit("atualizar mensagens", obj_mensagem);
-                }
-            }
+            io.sockets.emit("actualizar mensages", obj_mensagem);
         } else {
-            usuarios[dados.username].emit("atualizar mensagens", obj_mensagem);
-
+            usuarios[dados.username].emit("actualizar mensages", obj_mensagem);
             if (usuarios[dados.to]) {
-                usuarios[dados.to].emit("atualizar mensagens", obj_mensagem);
+                usuarios[dados.to].emit("actualizar mensages", obj_mensagem);
             }
         }
-
 
         callback();
     });
 
-    // socket.on("disconnect", function (dados) {
-    //     console.log(dados,"dados disconet");
-    //     mensagem = "<b>"+socket.username + "</b> saiu da sala";
-    //     var date = getDateTime();
-    //     var obj_mensagem = {
-    //         msg: mensagem, tipo: 'offline', user: socket.username,
-    //         date: date, usuarios: usuarios
-    //     };
-
-    //     delete usuarios[socket.nombre];
-    //     io.sockets.emit("atualizar usuarios", Object.keys(usuarios));
-    //     io.sockets.emit("atualizar mensagens", obj_mensagem);
-    // });
-
+    socket.on("disconnect", function () {
+            var info = {
+                username: socket.username,
+                date: date,
+                status: 'offline'
+            };
+            try{
+                persistence.updateUsers(connection, info);
+                try {
+                    for (const user of usuarios) {
+                        if (user.username == socket.username) {
+                            user.date = info.date;
+                            user.status = info.status;
+                        }
+                    }
+                    console.log(usuarios, "depois de desconectar");
+                    io.sockets.emit("actualizar usuarios", usuarios);
+                } catch (error){
+                    console.log(error);
+                }
+            }catch(error){
+                console.log(error);
+            }
+    });
 });
 
